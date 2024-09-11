@@ -11,3 +11,5 @@ export type {
   GenerateStatementsOptions,
   GeneratedOutput
 } from './typescript';
+
+console.log('LOADED @aws-amplify/graphql-generator');

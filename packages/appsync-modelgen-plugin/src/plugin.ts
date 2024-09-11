@@ -9,7 +9,10 @@ import { AppSyncModelTypeScriptVisitor } from './visitors/appsync-typescript-vis
 import { AppSyncModelJavascriptVisitor } from './visitors/appsync-javascript-visitor';
 import { AppSyncModelDartVisitor } from './visitors/appsync-dart-visitor';
 import { AppSyncModelIntrospectionVisitor } from './visitors/appsync-model-introspection-visitor';
-export const plugin: PluginFunction<RawAppSyncModelConfig> = (
+
+type AmplifyPluginFunction<T> = (...args: Parameters<PluginFunction<T>>) => Awaited<ReturnType<PluginFunction<T>>>;
+
+export const plugin: AmplifyPluginFunction<RawAppSyncModelConfig> = (
   schema: GraphQLSchema,
   rawDocuments: Types.DocumentFile[],
   config: RawAppSyncModelConfig,

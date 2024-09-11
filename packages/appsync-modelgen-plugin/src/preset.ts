@@ -1,4 +1,4 @@
-import { Types } from '@graphql-codegen/plugin-helpers';
+import { CodegenPlugin, Types } from '@graphql-codegen/plugin-helpers';
 import { Kind, TypeDefinitionNode } from 'graphql';
 import { join } from 'path';
 import { JAVA_SCALAR_MAP, SWIFT_SCALAR_MAP, TYPESCRIPT_SCALAR_MAP, DART_SCALAR_MAP, METADATA_SCALAR_MAP } from './scalars';
@@ -31,18 +31,47 @@ export type AppSyncModelCodeGenPresetConfig = {
   isDataStoreEnabled?: boolean;
 };
 
+type AmplifyGenerateOptions = Omit<Types.GenerateOptions, 'pluginMap'> & {
+  pluginMap: {
+    [name: string]: Omit<Types.GenerateOptions['pluginMap'][string], 'plugin'> & {
+      plugin: (
+        ...args: Parameters<Types.GenerateOptions['pluginMap'][string]['plugin']>
+      ) => Awaited<ReturnType<Types.GenerateOptions['pluginMap'][string]['plugin']>>;
+    };
+  };
+};
+
+type AmplifyPresetFnArgs<
+  Config = any,
+  PluginConfig = {
+    [key: string]: any;
+  }
+> = Omit<Types.PresetFnArgs<Config>, 'pluginMap'> & {
+  pluginMap: {
+    [name: string]: Omit<Types.PresetFnArgs<Config>['pluginMap'][string], 'plugin'> & {
+      plugin: (
+        ...args: Parameters<Types.PresetFnArgs<Config>['pluginMap'][string]['plugin']>
+      ) => Awaited<ReturnType<Types.PresetFnArgs<Config>['pluginMap'][string]['plugin']>>;
+    };
+  };
+};
+
+type AmplifyOutputPreset<TPresetConfig = any> = {
+  buildGeneratesSection: (options: AmplifyPresetFnArgs<TPresetConfig>) => AmplifyGenerateOptions[];
+};
+
 const generateJavaPreset = (
-  options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>,
+  options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>,
   models: TypeDefinitionNode[],
   manyToManyJoinModels: TypeDefinitionNode[],
-): Types.GenerateOptions[] => {
-  const config: Types.GenerateOptions[] = [];
+): AmplifyGenerateOptions[] => {
+  const config: AmplifyGenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir
     ? [options.config.overrideOutputDir]
     : [options.baseOutputDir, ...GENERATED_PACKAGE_NAME.split('.')];
 
   // Only generate lazy models if feature flag enabled and datastore is not being used.
-  const generateAPILazyModels = options.config.generateModelsForLazyLoadAndCustomSelectionSet && !options.config.isDataStoreEnabled
+  const generateAPILazyModels = options.config.generateModelsForLazyLoadAndCustomSelectionSet && !options.config.isDataStoreEnabled;
 
   // Class loader
   config.push({
@@ -70,7 +99,7 @@ const generateJavaPreset = (
     // Create ModelPath's only if lazy models are generated
     if (generateAPILazyModels) {
       // Create ModelPath if type is @model
-      if (model?.directives?.find((directive) => directive?.name?.value === 'model')) {
+      if (model?.directives?.find(directive => directive?.name?.value === 'model')) {
         config.push({
           ...options,
           filename: join(...modelFolder, `${modelName}Path.java`),
@@ -93,22 +122,22 @@ const generateJavaPreset = (
         filename: join(...modelFolder, `${joinModel.name.value}Path.java`),
         config: {
           ...options.config,
-          scalars: {...JAVA_SCALAR_MAP, ...options.config.scalars},
+          scalars: { ...JAVA_SCALAR_MAP, ...options.config.scalars },
           generate: 'metadata',
           selectedType: joinModel.name.value,
         },
       });
     });
-  };
+  }
 
   return config;
 };
 
 const generateSwiftPreset = (
-  options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>,
+  options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>,
   models: TypeDefinitionNode[],
-): Types.GenerateOptions[] => {
-  const config: Types.GenerateOptions[] = [];
+): AmplifyGenerateOptions[] => {
+  const config: AmplifyGenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ? options.config.overrideOutputDir : options.baseOutputDir;
   models.forEach(model => {
     const modelName = model.name.value;
@@ -152,10 +181,10 @@ const generateSwiftPreset = (
 };
 
 const generateTypeScriptPreset = (
-  options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>,
+  options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>,
   models: TypeDefinitionNode[],
-): Types.GenerateOptions[] => {
-  const config: Types.GenerateOptions[] = [];
+): AmplifyGenerateOptions[] => {
+  const config: AmplifyGenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ? options.config.overrideOutputDir : join(options.baseOutputDir);
   config.push({
     ...options,
@@ -181,10 +210,10 @@ const generateTypeScriptPreset = (
 };
 
 const generateJavasScriptPreset = (
-  options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>,
+  options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>,
   models: TypeDefinitionNode[],
-): Types.GenerateOptions[] => {
-  const config: Types.GenerateOptions[] = [];
+): AmplifyGenerateOptions[] => {
+  const config: AmplifyGenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ? options.config.overrideOutputDir : join(options.baseOutputDir);
   config.push({
     ...options,
@@ -234,10 +263,10 @@ const generateJavasScriptPreset = (
 };
 
 const generateDartPreset = (
-  options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>,
+  options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>,
   models: TypeDefinitionNode[],
-): Types.GenerateOptions[] => {
-  const config: Types.GenerateOptions[] = [];
+): AmplifyGenerateOptions[] => {
+  const config: AmplifyGenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ?? options.baseOutputDir;
   models.forEach(model => {
     const modelName = model.name.value;
@@ -264,7 +293,7 @@ const generateDartPreset = (
   return config;
 };
 
-const generateManyToManyModelStubs = (options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>): TypeDefinitionNode[] => {
+const generateManyToManyModelStubs = (options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>): TypeDefinitionNode[] => {
   let models = new Array<TypeDefinitionNode>();
   let manyToManySet = new Set<string>();
   options.schema.definitions.forEach(def => {
@@ -295,10 +324,10 @@ const generateManyToManyModelStubs = (options: Types.PresetFnArgs<AppSyncModelCo
 };
 
 const generateIntrospectionPreset = (
-  options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>,
+  options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>,
   models: TypeDefinitionNode[],
-): Types.GenerateOptions[] => {
-  const config: Types.GenerateOptions[] = [];
+): AmplifyGenerateOptions[] => {
+  const config: AmplifyGenerateOptions[] = [];
   // model-intropection.json
   config.push({
     ...options,
@@ -312,8 +341,13 @@ const generateIntrospectionPreset = (
   return config;
 };
 
-export const preset: Types.OutputPreset<AppSyncModelCodeGenPresetConfig> = {
-  buildGeneratesSection: (options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>): Types.GenerateOptions[] => {
+// type Prettify<T> = T extends (...args: infer ArgsType) => any ? (...args: ArgsType) => ReturnType<T> : T extends object ? {
+//   [P in keyof T]: Prettify<T[P]>;
+// } : T;
+
+// type X = Prettify<AmplifyGenerateOptions['pluginMap'][string]>['plugin'];
+export const preset: AmplifyOutputPreset<AppSyncModelCodeGenPresetConfig> = {
+  buildGeneratesSection: (options: AmplifyPresetFnArgs<AppSyncModelCodeGenPresetConfig>): AmplifyGenerateOptions[] => {
     const codeGenTarget = options.config.target;
     const typesToSkip: string[] = ['Query', 'Mutation', 'Subscription'];
     const models: TypeDefinitionNode[] = options.schema.definitions.filter(
