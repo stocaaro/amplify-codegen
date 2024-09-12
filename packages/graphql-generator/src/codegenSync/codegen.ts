@@ -7,7 +7,7 @@ import {
   createNoopProfiler,
 } from '@graphql-codegen/plugin-helpers';
 import { visit, DefinitionNode, Kind, print, NameNode, specifiedRules, DocumentNode } from 'graphql';
-import { executePlugin } from './execute-plugin.js';
+import { executePlugin } from './execute-plugin';
 import { validateGraphQlDocuments, Source, asArray } from '@graphql-tools/utils';
 
 import { mergeSchemas } from '@graphql-tools/schema';
@@ -19,7 +19,7 @@ import {
   prioritize,
   shouldValidateDocumentsAgainstSchema,
   shouldValidateDuplicateDocuments,
-} from './utils.js';
+} from './utils';
 
 export async function codegen(options: Types.GenerateOptions): Promise<string> {
   const documents = options.documents || [];

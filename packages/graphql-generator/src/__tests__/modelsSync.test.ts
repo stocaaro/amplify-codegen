@@ -10,7 +10,8 @@ describe('generateModelsSync', () => {
           schema: readSchema('blog-model.graphql'),
           target,
         };
-        const models = await generateModelsSync(options);
+        const models = generateModelsSync(options);
+        expect(models).not.toBeInstanceOf(Promise);
         expect(models).toMatchSnapshot();
       });
     });
@@ -21,7 +22,8 @@ describe('generateModelsSync', () => {
         target: 'swift',
         improvePluralization: true,
       };
-      const models = await generateModelsSync(options);
+      const models = generateModelsSync(options);
+      expect(models).not.toBeInstanceOf(Promise);
       expect(models).toMatchSnapshot();
     });
   });
@@ -39,7 +41,8 @@ describe('generateModelsSync', () => {
         directive @customField on FIELD_DEFINITION
       `,
     };
-    const models = await generateModelsSync(options);
+    const models = generateModelsSync(options);
+    expect(models).not.toBeInstanceOf(Promise);
     expect(models).toMatchSnapshot();
   });
 });
