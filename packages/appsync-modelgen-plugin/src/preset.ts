@@ -31,7 +31,7 @@ export type AppSyncModelCodeGenPresetConfig = {
   isDataStoreEnabled?: boolean;
 };
 
-type AmplifyGenerateOptions = Omit<Types.GenerateOptions, 'pluginMap'> & {
+export type AmplifyGenerateOptions = Omit<Types.GenerateOptions, 'pluginMap'> & {
   pluginMap: {
     [name: string]: Omit<Types.GenerateOptions['pluginMap'][string], 'plugin'> & {
       plugin: (

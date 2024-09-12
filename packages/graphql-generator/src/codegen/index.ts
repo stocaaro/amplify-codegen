@@ -20,7 +20,17 @@ import {
   shouldValidateDuplicateDocuments,
 } from './utils.js';
 
-export function codegen(options: Types.GenerateOptions): string {
+type AmplifyGenerateOptions = Omit<Types.GenerateOptions, 'pluginMap'> & {
+  pluginMap: {
+    [name: string]: Omit<Types.GenerateOptions['pluginMap'][string], 'plugin'> & {
+      plugin: (
+        ...args: Parameters<Types.GenerateOptions['pluginMap'][string]['plugin']>
+      ) => Awaited<ReturnType<Types.GenerateOptions['pluginMap'][string]['plugin']>>;
+    };
+  };
+};
+
+export function codegen(options: AmplifyGenerateOptions): string {
   const documents = options.documents || [];
 
   const skipDocumentsValidation = getSkipDocumentsValidationOption(options);
