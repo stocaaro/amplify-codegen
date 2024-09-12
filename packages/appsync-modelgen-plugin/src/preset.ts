@@ -46,12 +46,12 @@ type AmplifyPresetFnArgs<
   PluginConfig = {
     [key: string]: any;
   }
-> = Omit<Types.PresetFnArgs<Config>, 'pluginMap'> & {
+> = Omit<Types.PresetFnArgs<Config, PluginConfig>, 'pluginMap'> & {
   pluginMap: {
-    [name: string]: Omit<Types.PresetFnArgs<Config>['pluginMap'][string], 'plugin'> & {
+    [name: string]: Omit<Types.PresetFnArgs<Config, PluginConfig>['pluginMap'][string], 'plugin'> & {
       plugin: (
-        ...args: Parameters<Types.PresetFnArgs<Config>['pluginMap'][string]['plugin']>
-      ) => Awaited<ReturnType<Types.PresetFnArgs<Config>['pluginMap'][string]['plugin']>>;
+        ...args: Parameters<Types.PresetFnArgs<Config, PluginConfig>['pluginMap'][string]['plugin']>
+      ) => Awaited<ReturnType<Types.PresetFnArgs<Config, PluginConfig>['pluginMap'][string]['plugin']>>;
     };
   };
 };
