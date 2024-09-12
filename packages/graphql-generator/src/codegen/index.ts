@@ -124,7 +124,7 @@ export function codegen(options: AmplifyGenerateOptions): string {
   const prepend: Set<string> = new Set<string>();
   const append: Set<string> = new Set<string>();
 
-  const output = options.plugins.map(async plugin => {
+  const output = options.plugins.map(plugin => {
     const name = Object.keys(plugin)[0];
     const pluginPackage = options.pluginMap[name];
     const pluginConfig = plugin[name] || {};
