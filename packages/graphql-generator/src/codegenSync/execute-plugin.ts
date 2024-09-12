@@ -1,4 +1,5 @@
-import { Types, CodegenPlugin, Profiler, createNoopProfiler } from '@graphql-codegen/plugin-helpers';
+import { SyncTypes } from '@aws-amplify/appsync-modelgen-plugin';
+import { Types } from '@graphql-codegen/plugin-helpers';
 import { DocumentNode, GraphQLSchema, buildASTSchema } from 'graphql';
 
 export interface ExecutePluginOptions {
@@ -12,10 +13,9 @@ export interface ExecutePluginOptions {
   allPlugins: Types.ConfiguredPlugin[];
   skipDocumentsValidation?: Types.SkipDocumentsValidationOptions;
   pluginContext?: { [key: string]: any };
-  profiler?: Profiler;
 }
 
-export async function executePlugin(options: ExecutePluginOptions, plugin: CodegenPlugin): Promise<Types.PluginOutput> {
+export function executePlugin(options: ExecutePluginOptions, plugin: SyncTypes.CodegenPlugin): Types.PluginOutput {
   if (!plugin || !plugin.plugin || typeof plugin.plugin !== 'function') {
     throw new Error(
       `Invalid Custom Plugin "${options.name}" \n
@@ -35,23 +35,17 @@ export async function executePlugin(options: ExecutePluginOptions, plugin: Codeg
   const outputSchema: GraphQLSchema = options.schemaAst || buildASTSchema(options.schema, options.config as any);
   const documents = options.documents || [];
   const pluginContext = options.pluginContext || {};
-  const profiler = options.profiler ?? createNoopProfiler();
 
   if (plugin.validate && typeof plugin.validate === 'function') {
     try {
-      // FIXME: Sync validate signature with plugin signature
-      await profiler.run(
-        async () =>
-          plugin!.validate!(
-            outputSchema,
-            documents,
-            options.config,
-            options.outputFilename,
-            options.allPlugins,
-            pluginContext
-          ),
-        `Plugin ${options.name} validate`
-      );
+        plugin!.validate!(
+          outputSchema,
+          documents,
+          options.config,
+          options.outputFilename,
+          options.allPlugins,
+          pluginContext
+        );
     } catch (e) {
         let error: Error;
         if (!(e instanceof Error)) {
@@ -67,20 +61,14 @@ export async function executePlugin(options: ExecutePluginOptions, plugin: Codeg
     }
   }
 
-  return profiler.run(
-    () =>
-      Promise.resolve(
-        plugin.plugin(
-          outputSchema,
-          documents,
-          typeof options.config === 'object' ? { ...options.config } : options.config,
-          {
-            outputFile: options.outputFilename,
-            allPlugins: options.allPlugins,
-            pluginContext,
-          }
-        )
-      ),
-    `Plugin ${options.name} execution`
+  return plugin.plugin(
+    outputSchema,
+    documents,
+    typeof options.config === 'object' ? { ...options.config } : options.config,
+    {
+      outputFile: options.outputFilename,
+      allPlugins: options.allPlugins,
+      pluginContext,
+    }
   );
 }

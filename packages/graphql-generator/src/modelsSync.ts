@@ -8,7 +8,7 @@ const { version: packageVersion } = require('../package.json');
 
 const directiveDefinitions = DefaultDirectives.map(directive => directive.definition).join('\n');
 
-export async function generateModelsSync(options: GenerateModelsOptions): Promise<GeneratedOutput> {
+export function generateModelsSync(options: GenerateModelsOptions): GeneratedOutput {
   const {
     schema,
     target,
@@ -30,7 +30,7 @@ export async function generateModelsSync(options: GenerateModelsOptions): Promis
   const parsedSchema = parse(schema);
 
   const overrideOutputDir = '';
-  const appsyncLocalConfig = await appSyncDataStoreCodeGen.preset.buildGeneratesSection({
+  const appsyncLocalConfig = appSyncDataStoreCodeGen.presetSync.buildGeneratesSection({
     schema: parsedSchema,
     baseOutputDir: '',
     config: {
@@ -59,18 +59,16 @@ export async function generateModelsSync(options: GenerateModelsOptions): Promis
       },
     ],
     pluginMap: {
-      appSyncLocalCodeGen: appSyncDataStoreCodeGen,
+      appSyncLocalCodeGen: appSyncDataStoreCodeGen.pluginSync,
     },
     documents: [],
   });
 
-  return Promise.all(
-    appsyncLocalConfig.map(async config => {
-      const content = await codegen(config);
+  return appsyncLocalConfig.map((config) => {
+      const content = codegen(config);
 
       // set the keys to always use posix path separators
       // Fallback to \ because path.win32 is not implemented by path-browserify
       return { [config.filename.split(path.win32?.sep || '\\').join(path.posix.sep)]: content };
-    }),
-  ).then((outputs: GeneratedOutput[]) => outputs.reduce((curr, next) => ({ ...curr, ...next }), {}));
+    }).reduce((curr, next) => ({ ...curr, ...next }), {});
 }

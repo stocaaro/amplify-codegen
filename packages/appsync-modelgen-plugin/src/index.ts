@@ -5,8 +5,12 @@ export interface AppSyncModelPluginConfig extends RawDocumentsConfig {
 }
 
 export * from './plugin';
+export * from './pluginSync';
 export * from './preset';
+export * from './presetSync';
 export * from './interfaces/introspection';
+
+export { SyncTypes } from './syncTypes';
 
 export const addToSchema = (config: AppSyncModelPluginConfig) => {
   const result: string[] = [];
