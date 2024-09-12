@@ -2,13 +2,13 @@ import * as path from 'path';
 import { parse } from 'graphql';
 import * as appSyncDataStoreCodeGen from '@aws-amplify/appsync-modelgen-plugin';
 import { DefaultDirectives } from '@aws-amplify/graphql-directives';
-import { codegen } from '@graphql-codegen/core';
+import { codegen } from './codegenSync';
 import { GenerateModelsOptions, GeneratedOutput } from './typescript';
 const { version: packageVersion } = require('../package.json');
 
 const directiveDefinitions = DefaultDirectives.map(directive => directive.definition).join('\n');
 
-export async function generateModels(options: GenerateModelsOptions): Promise<GeneratedOutput> {
+export async function generateModelsSync(options: GenerateModelsOptions): Promise<GeneratedOutput> {
   const {
     schema,
     target,

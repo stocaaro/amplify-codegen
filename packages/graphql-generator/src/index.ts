@@ -1,4 +1,5 @@
 export { generateModels } from './models';
+export { generateModelsSync } from './modelsSync';
 export { generateStatements } from './statements';
 export { generateTypes } from './types';
 
