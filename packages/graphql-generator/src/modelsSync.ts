@@ -2,7 +2,7 @@ import * as path from 'path';
 import { parse } from 'graphql';
 import * as appSyncDataStoreCodeGen from '@aws-amplify/appsync-modelgen-plugin';
 import { DefaultDirectives } from '@aws-amplify/graphql-directives';
-import { codegen } from './codegenSync';
+import { codegen } from './vendor/codegenSync';
 import { GenerateModelsOptions, GeneratedOutput } from './typescript';
 const { version: packageVersion } = require('../package.json');
 
