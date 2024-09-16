@@ -1,0 +1,1 @@
+This package code is forked from [this version](https://github.com/dotansimha/graphql-code-generator/tree/a9a17951db9e373c79125d37341edef1c62a1951/packages/graphql-codegen-core) of the `@graphql-codegen/core` library, which is [adapted to function without the async behavior](https://github.com/stocaaro/amplify-codegen/pull/1).
