@@ -25,4 +25,16 @@ how to update to any specific version of `@graphql-codegen/core` so that any nee
 
 ### Step 2 - Remove all Promise/async patterns from the copied code
 
-TBD - These instructions will be written as they are being followed with the next change.
+For the code forked here most of the complexity of adapting `codegen` to be non-async is captured in type changes surfaced by `@aws-amplify/appsync-modelgen-plugin` as `SyncTypes`.
+
+These are the steps needed to adapt the codegen code to adhere to the sync types:
+- replace "async " => ""
+- replace "await " => ""
+- replace "Promise<X>" => "X"
+- replace "Promise.resolve(X)" => "X"
+- replace "Promise.all(X)" => "X"
+- change import of "createNoopProfiler" to "import { createNoopProfiler } from '../../../profiler'"
+- replace "options.profiler ?? createNoopProfiler()" => "createNoopProfiler()"
+- change import of "Types" to "import { SyncTypes as Types } from '@aws-amplify/appsync-modelgen-plugin'
+- In the `executePlugin` function, replace "CodegenPlugin" with "Types.CodegenPlugin" and remove the unused import
+- Review the remaining errors. In the first adaptation, the only remaining errors where `X | undefined is not assignable to parameter of type` where the original code doesn't adhere to strict types and the most expedient solution is to add a `!` to tell typescript that the optional value will be present.
