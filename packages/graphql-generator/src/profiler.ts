@@ -1,6 +1,6 @@
 import { ProfilerEvent } from "@graphql-codegen/plugin-helpers";
 
-export interface Profiler {
+interface Profiler {
     run<T>(fn: () => T, name: string, cat?: string): T;
     collect(): ProfilerEvent[];
 }
