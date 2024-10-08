@@ -6,7 +6,7 @@ import {
 } from '@graphql-codegen/plugin-helpers';
 import { createNoopProfiler } from '../../../profiler'
 import { visit, DefinitionNode, Kind, print, NameNode, specifiedRules, DocumentNode } from 'graphql';
-import { executePlugin } from './execute-plugin.js';
+import { executePlugin } from './execute-plugin';
 import { validateGraphQlDocuments, Source, asArray } from '@graphql-tools/utils';
 import { SyncTypes as Types } from '@aws-amplify/appsync-modelgen-plugin';
 import { mergeSchemas } from '@graphql-tools/schema';
@@ -18,7 +18,7 @@ import {
   prioritize,
   shouldValidateDocumentsAgainstSchema,
   shouldValidateDuplicateDocuments,
-} from './utils.js';
+} from './utils';
 
 export function codegen(options: Types.GenerateOptions): string {
   const documents = options.documents || [];
@@ -86,7 +86,6 @@ export function codegen(options: Types.GenerateOptions): string {
       }));
       const rules = specifiedRules.filter(rule => !ignored.some(ignoredRule => rule.name.startsWith(ignoredRule)));
       const schemaHash = extractHashFromSchema(schemaInstance);
-
       if (!schemaHash || !options.cache || documents.some(d => typeof d.hash !== 'string')) {
         return validateGraphQlDocuments(
             schemaInstance,
@@ -132,7 +131,6 @@ export function codegen(options: Types.GenerateOptions): string {
               ...options.config,
               ...pluginConfig,
             };
-
       const result = profiler.run(
         () =>
           executePlugin(
@@ -178,7 +176,6 @@ export function codegen(options: Types.GenerateOptions): string {
 
       return '';
     });
-
   return [...sortPrependValues(Array.from(prepend.values())), ...output, ...Array.from(append.values())]
     .filter(Boolean)
     .join('\n');

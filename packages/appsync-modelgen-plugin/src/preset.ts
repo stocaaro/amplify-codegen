@@ -4,7 +4,7 @@ import { join } from 'path';
 import { JAVA_SCALAR_MAP, SWIFT_SCALAR_MAP, TYPESCRIPT_SCALAR_MAP, DART_SCALAR_MAP, METADATA_SCALAR_MAP } from './scalars';
 import { LOADER_CLASS_NAME, GENERATED_PACKAGE_NAME } from './configs/java-config';
 import { graphqlName, toUpper } from 'graphql-transformer-common';
-import { SyncPluginMap, SyncTypes } from './types/sync';
+import { SyncTypes } from './types/sync';
 
 const APPSYNC_DATA_STORE_CODEGEN_TARGETS = ['java', 'swift', 'javascript', 'typescript', 'dart', 'introspection'];
 
@@ -32,24 +32,15 @@ export type AppSyncModelCodeGenPresetConfig = {
   isDataStoreEnabled?: boolean;
 };
 
-type PresetShapeSync = {
-  GenerateOptions: Types.GenerateOptions;
-  PresetFnArgs: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>
-}
+type GenerateOptions = Omit<SyncTypes.GenerateOptions, 'cache' | 'pluginMap'>;
+type PresetFnArgs = Omit<SyncTypes.PresetFnArgs<AppSyncModelCodeGenPresetConfig>, 'cache' | 'pluginMap'>;
 
-type PresetShapeAsync = {
-  GenerateOptions: SyncTypes.GenerateOptions;
-  PresetFnArgs: SyncTypes.PresetFnArgs<AppSyncModelCodeGenPresetConfig>
-}
-
-type PresetShape = PresetShapeSync | PresetShapeAsync
-
-const generateJavaPreset = <ShapeTypes extends PresetShape>(
-  options: ShapeTypes['PresetFnArgs'],
+const generateJavaPreset = (
+  options: PresetFnArgs,
   models: TypeDefinitionNode[],
   manyToManyJoinModels: TypeDefinitionNode[],
-): ShapeTypes['GenerateOptions'][] => {
-  const config = [];
+): GenerateOptions[] => {
+  const config: GenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir
     ? [options.config.overrideOutputDir]
     : [options.baseOutputDir, ...GENERATED_PACKAGE_NAME.split('.')];
@@ -117,11 +108,11 @@ const generateJavaPreset = <ShapeTypes extends PresetShape>(
   return config;
 };
 
-const generateSwiftPreset = <ShapeTypes extends PresetShape>(
-  options: ShapeTypes['PresetFnArgs'],
+const generateSwiftPreset = (
+  options: PresetFnArgs,
   models: TypeDefinitionNode[],
-): ShapeTypes['GenerateOptions'][] => {
-  const config = [];
+): GenerateOptions[] => {
+  const config: GenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ? options.config.overrideOutputDir : options.baseOutputDir;
   models.forEach(model => {
     const modelName = model.name.value;
@@ -164,11 +155,11 @@ const generateSwiftPreset = <ShapeTypes extends PresetShape>(
   return config;
 };
 
-const generateTypeScriptPreset = <ShapeTypes extends PresetShape>(
-  options: ShapeTypes['PresetFnArgs'],
+const generateTypeScriptPreset = (
+  options: PresetFnArgs,
   models: TypeDefinitionNode[],
-): ShapeTypes['GenerateOptions'][] => {
-  const config = [];
+): GenerateOptions[] => {
+  const config: GenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ? options.config.overrideOutputDir : join(options.baseOutputDir);
   config.push({
     ...options,
@@ -193,11 +184,11 @@ const generateTypeScriptPreset = <ShapeTypes extends PresetShape>(
   return config;
 };
 
-const generateJavasScriptPreset = <ShapeTypes extends PresetShape>(
-  options: ShapeTypes['PresetFnArgs'],
+const generateJavasScriptPreset = (
+  options: PresetFnArgs,
   models: TypeDefinitionNode[],
-): ShapeTypes['GenerateOptions'][] => {
-  const config = [];
+): GenerateOptions[] => {
+  const config: GenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ? options.config.overrideOutputDir : join(options.baseOutputDir);
   config.push({
     ...options,
@@ -246,11 +237,11 @@ const generateJavasScriptPreset = <ShapeTypes extends PresetShape>(
   return config;
 };
 
-const generateDartPreset = <ShapeTypes extends PresetShape>(
-  options: ShapeTypes['PresetFnArgs'],
+const generateDartPreset = (
+  options: PresetFnArgs,
   models: TypeDefinitionNode[],
-): ShapeTypes['GenerateOptions'][] => {
-  const config = [];
+): GenerateOptions[] => {
+  const config: GenerateOptions[] = [];
   const modelFolder = options.config.overrideOutputDir ?? options.baseOutputDir;
   models.forEach(model => {
     const modelName = model.name.value;
@@ -277,7 +268,7 @@ const generateDartPreset = <ShapeTypes extends PresetShape>(
   return config;
 };
 
-const generateManyToManyModelStubs = <ShapeTypes extends PresetShape>(options: ShapeTypes['PresetFnArgs']): TypeDefinitionNode[] => {
+const generateManyToManyModelStubs = (options: PresetFnArgs): TypeDefinitionNode[] => {
   let models = new Array<TypeDefinitionNode>();
   let manyToManySet = new Set<string>();
   options.schema.definitions.forEach(def => {
@@ -307,11 +298,11 @@ const generateManyToManyModelStubs = <ShapeTypes extends PresetShape>(options: S
   return models;
 };
 
-const generateIntrospectionPreset = <ShapeTypes extends PresetShape>(
-  options: ShapeTypes['PresetFnArgs'],
+const generateIntrospectionPreset = (
+  options: PresetFnArgs,
   models: TypeDefinitionNode[],
-): ShapeTypes['GenerateOptions'][] => {
-  const config = [];
+): GenerateOptions[] => {
+  const config: GenerateOptions[] = [];
   // model-intropection.json
   config.push({
     ...options,
@@ -325,45 +316,61 @@ const generateIntrospectionPreset = <ShapeTypes extends PresetShape>(
   return config;
 };
 
-// TODO Is there a way to use promisable to actually wrap returns in promises to make the types real? Should we do this?
-function buildPresets<Promisable extends boolean, ShapeTypes extends Promisable extends true ? PresetShapeAsync :  PresetShapeSync>(_promisable: boolean) {
-  return {
-    buildGeneratesSection: (options: ShapeTypes['PresetFnArgs']): ShapeTypes['GenerateOptions'][] => {
-      const codeGenTarget = options.config.target;
-      const typesToSkip: string[] = ['Query', 'Mutation', 'Subscription'];
-      const models: TypeDefinitionNode[] = options.schema.definitions.filter(
-        t =>
-          (t.kind === 'ObjectTypeDefinition' && !typesToSkip.includes(t.name.value)) ||
-          (t.kind === 'EnumTypeDefinition' && !t.name.value.startsWith('__')),
-      ) as any;
-      const manyToManyModels = generateManyToManyModelStubs<ShapeTypes>(options);
-      if (options.config.usePipelinedTransformer || options.config.transformerVersion === 2) {
-        models.push(...manyToManyModels);
-      }
+const buildGenerations = (options: PresetFnArgs): GenerateOptions[] => {
+    const codeGenTarget = options.config.target;
+    const typesToSkip: string[] = ['Query', 'Mutation', 'Subscription'];
+    const models: TypeDefinitionNode[] = options.schema.definitions.filter(
+      t =>
+        (t.kind === 'ObjectTypeDefinition' && !typesToSkip.includes(t.name.value)) ||
+        (t.kind === 'EnumTypeDefinition' && !t.name.value.startsWith('__')),
+    ) as any;
+    const manyToManyModels = generateManyToManyModelStubs(options);
+    if (options.config.usePipelinedTransformer || options.config.transformerVersion === 2) {
+      models.push(...manyToManyModels);
+    }
 
-      switch (codeGenTarget) {
-        case 'java':
-          return generateJavaPreset<ShapeTypes>(options, models, manyToManyModels);
-        case 'swift':
-          return generateSwiftPreset<ShapeTypes>(options, models);
-        case 'javascript':
-          return generateJavasScriptPreset<ShapeTypes>(options, models);
-        case 'typescript':
-          return generateTypeScriptPreset<ShapeTypes>(options, models);
-        case 'dart':
-          return generateDartPreset<ShapeTypes>(options, models);
-        case 'introspection':
-          return generateIntrospectionPreset<ShapeTypes>(options, models);
-        default:
-          throw new Error(
-            `amplify-codegen-appsync-model-plugin not support language target ${codeGenTarget}. Supported codegen targets are ${APPSYNC_DATA_STORE_CODEGEN_TARGETS.join(
-              ', ',
-            )}`,
-          );
-      }
-    },
+    switch (codeGenTarget) {
+      case 'java':
+        return generateJavaPreset(options, models, manyToManyModels);
+      case 'swift':
+        return generateSwiftPreset(options, models);
+      case 'javascript':
+        return generateJavasScriptPreset(options, models);
+      case 'typescript':
+        return generateTypeScriptPreset(options, models);
+      case 'dart':
+        return generateDartPreset(options, models);
+      case 'introspection':
+        return generateIntrospectionPreset(options, models);
+      default:
+        throw new Error(
+          `amplify-codegen-appsync-model-plugin not support language target ${codeGenTarget}. Supported codegen targets are ${APPSYNC_DATA_STORE_CODEGEN_TARGETS.join(
+            ', ',
+          )}`,
+        );
+    }
   };
+
+export const presetSync: SyncTypes.OutputPreset<AppSyncModelCodeGenPresetConfig> = {
+  buildGeneratesSection: (options: SyncTypes.PresetFnArgs<AppSyncModelCodeGenPresetConfig>): SyncTypes.GenerateOptions[] => {
+    const {cache, pluginMap, ...otherOptions} = options;
+
+    return buildGenerations(otherOptions).map((config: GenerateOptions) => ({
+      pluginMap,
+      cache,
+      ...config,
+    }))
+  }
 }
 
-export const preset: Types.OutputPreset<AppSyncModelCodeGenPresetConfig> = buildPresets(true);
-export const presetSync: Types.OutputPreset<AppSyncModelCodeGenPresetConfig> = buildPresets(false);
+export const preset: Types.OutputPreset<AppSyncModelCodeGenPresetConfig> = {
+  buildGeneratesSection: (options: Types.PresetFnArgs<AppSyncModelCodeGenPresetConfig>): Types.GenerateOptions[] => {
+    const {cache, pluginMap, ...otherOptions} = options;
+
+    return buildGenerations(otherOptions).map((config: GenerateOptions) => ({
+      pluginMap,
+      cache,
+      ...config,
+    }))
+  }
+}

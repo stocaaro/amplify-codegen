@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Profiler } from '@graphql-codegen/plugin-helpers';
 import { SyncTypes as Types } from '@aws-amplify/appsync-modelgen-plugin';
 import { DocumentNode, GraphQLSchema, buildASTSchema } from 'graphql';
@@ -37,7 +38,6 @@ export function executePlugin(options: ExecutePluginOptions, plugin: Types.Codeg
   const documents = options.documents || [];
   const pluginContext = options.pluginContext || {};
   const profiler = createNoopProfiler();
-
   if (plugin.validate && typeof plugin.validate === 'function') {
     try {
       // FIXME: Sync validate signature with plugin signature
@@ -55,15 +55,15 @@ export function executePlugin(options: ExecutePluginOptions, plugin: Types.Codeg
       );
     } catch (e) {
       throw new Error(
-        `Plugin "${options.name}" validation failed: \n
-            ${e.message}
-          `
+        // @ts-ignore
+        `Plugin "${options.name}" validation failed: \n ${e.message}`
       );
     }
   }
 
   return profiler.run(
-    () => plugin.plugin(
+    () => {
+      const x = plugin.plugin(
           outputSchema,
           documents,
           typeof options.config === 'object' ? { ...options.config } : options.config,
@@ -72,7 +72,9 @@ export function executePlugin(options: ExecutePluginOptions, plugin: Types.Codeg
             allPlugins: options.allPlugins,
             pluginContext,
           }
-        ),
+        )
+        return x;
+      },
     `Plugin ${options.name} execution`
   );
 }

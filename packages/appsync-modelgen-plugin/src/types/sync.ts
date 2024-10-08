@@ -1,6 +1,7 @@
 import { Types, PluginFunction as PluginFunctionAsync, CodegenPlugin as CodegenPluginAsync } from "@graphql-codegen/plugin-helpers";
 
-type PluginMapContainer = Pick<Types.GenerateOptions, 'pluginMap'>
+type PluginMapContainer = Pick<Types.GenerateOptions, 'pluginMap'>;
+type CacheContainer = Pick<Types.GenerateOptions, 'cache'>;
 
 export type SyncPluginMap<Obj extends PluginMapContainer> = Omit<Obj, 'pluginMap'> & {
     pluginMap: {
@@ -12,19 +13,19 @@ export type SyncPluginMap<Obj extends PluginMapContainer> = Omit<Obj, 'pluginMap
     };
 };
 
+export type SyncCache<Obj extends CacheContainer> = Omit<Obj, 'cache'> & {
+    cache?: (<T>(namespace: string, key: string, factory: () => T) => T) | undefined
+};
+
 export declare namespace SyncTypes {
-    type GenerateOptions<
-        SyncGenerateOptions extends SyncPluginMap<Types.GenerateOptions
-    > = SyncPluginMap<Types.GenerateOptions>> = Omit<SyncGenerateOptions, 'cache'> & {
-        cache: (<T>(namespace: string, key: string, factory: () => T) => T) | undefined
-    };
+    type GenerateOptions = SyncCache<SyncPluginMap<Types.GenerateOptions>>;
 
     type PresetFnArgs<
         Config = any,
         PluginConfig = {
         [key: string]: any;
         }
-    > = SyncPluginMap<Types.PresetFnArgs<Config, PluginConfig>>;
+    > = SyncCache<SyncPluginMap<Types.PresetFnArgs<Config, PluginConfig>>>;
 
     type OutputPreset<TPresetConfig = any> = {
         buildGeneratesSection: (options: PresetFnArgs<TPresetConfig>) => GenerateOptions[];
