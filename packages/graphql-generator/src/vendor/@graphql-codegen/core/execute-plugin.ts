@@ -38,6 +38,7 @@ export function executePlugin(options: ExecutePluginOptions, plugin: Types.Codeg
   const documents = options.documents || [];
   const pluginContext = options.pluginContext || {};
   const profiler = createNoopProfiler();
+
   if (plugin.validate && typeof plugin.validate === 'function') {
     try {
       // FIXME: Sync validate signature with plugin signature
@@ -62,8 +63,7 @@ export function executePlugin(options: ExecutePluginOptions, plugin: Types.Codeg
   }
 
   return profiler.run(
-    () => {
-      const x = plugin.plugin(
+    () => plugin.plugin(
           outputSchema,
           documents,
           typeof options.config === 'object' ? { ...options.config } : options.config,
@@ -72,9 +72,7 @@ export function executePlugin(options: ExecutePluginOptions, plugin: Types.Codeg
             allPlugins: options.allPlugins,
             pluginContext,
           }
-        )
-        return x;
-      },
+        ),
     `Plugin ${options.name} execution`
   );
 }
